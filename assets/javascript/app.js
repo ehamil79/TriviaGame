@@ -1,224 +1,210 @@
-// Defined Variables
 $(document).ready(function () {
-    var count = 0;
-    var time = 31;
-    var isSelected = false;
-    var ticker;
+    //Creating variable to track the question & "slide" numbers
+    var questionCounter = 0;
+
+    // timeout 
+    var ansTimeout = 5000;
+
+    //Creating score variables
     var correct = 0;
     var incorrect = 0;
-    var unanswered = 0;
+    var missed = 0;
 
-    // questions and answer array
-    var question = ["What Happens If The Ghostbusters Cross Their Streams?", "Before Die Hard, What Was Actor Bruce Willis Primarily Known For?", "With What Machine Does Sarah Connor Destroy The Terminator At The End Of The Movie?", "What Are The Three Primary Directives Of Robocop?", "In Predator, Why Does The Alien Not Attack Unarmed “Prey?”", "What Is The Name Of The Sumerian God Of Destruction That Causes The Ghostbusters So Much Trouble?", "In Aliens, Who Is The Sole Survivor Of The Terraforming Colony Hadley’s Hope?"];
+    //Creating array of user's answers
+    var userAns = [];
 
-    var answer = ["It Reverses The Particle Flow", "Comedic Television Roles", "Hydraulic Press", "Serve the public trust, Protect the innocent, and Uphold the law", "There’s No Sport In Attacking Unarmed Prey", "Gozer The Gozerian", "Newt"];
-
-    var firstChoice = ["They Turn Into Ghosts", "They Blow Up", "It Reverses The Particle Flow", "The Ghost Are Tripled In Number"];
-    var secondChoice = ["Sci-Fi Televison Roles", "Tough Guy Roles", "Comedic Television Roles", "Chrildren's Television"];
-    var thirdChoice = ["Botnet", "Skynet", "Robocorp", "The Warweb"];
-    var fourthChoice = ["Always Arrest, Never Harm, And Report To Superiors", "Never Kill A Human, Always Protect Humans, And Sacrifice Yourself For Humans", "Trust, Love, and Discipline", "Serve the public trust, Protect the innocent, and Uphold the law"];
-
-    // show & hide functions
-    function showHolders() {
-        $("#question-holder").show();
-        $("#choice-holder-1").show();
-        $("#choice-holder-2").show();
-        $("#choice-holder-3").show();
-        $("#choice-holder-4").show();
-    }
-
-    function hideHolders() {
-        $("#question-holder").hide();
-        $("#choice-holder-1").hide();
-        $("#choice-holder-2").hide();
-        $("#choice-holder-3").hide();
-        $("#choice-holder-4").hide();
-    }
-
-    function hideResults() {
-        $("#correct-holder").hide();
-        $("#incorrect-holder").hide();
-        $("#unanswered-holder").hide();
-        $("#restart-holder").hide();
-    }
-
-    function displayQuestion() {
-        hideResults();
-        $("#answer-holder").hide();
-        $("#image-holder").hide();
-        $("#time-holder").show();
-        showHolders();
-        $("#question-holder").html(question[count]);
-        $("#choice-holder-1").html(firstChoice[count]);
-        $("#choice-holder-2").html(secondChoice[count]);
-        $("#choice-holder-3").html(thirdChoice[count]);
-        $("#choice-holder-4").html(fourthChoice[count]);
-
-        // hover CSS
-        $("#choice-holder-1").hover(function () {
-            $(this).css("color", "grey");
+    //Creating an array of objects with the questions, answer options, and correct answer
+    var questions = [
+        {
+            question: "What Happens If The Ghostbusters Cross Their Streams?",
+            choices: ["It Reverses The Particle Flow", "They Turn Into Ghosts", "They Blow Up", "The Ghost Are Tripled In Number"],
+            choicesAnswer: 0
         },
-            function () {
-                $(this).css("color", "black");
-            });
-        $("#choice-holder-2").hover(function () {
-            $(this).css("color", "grey");
+        {
+            question: "Before Die Hard, What Was Actor Bruce Willis Primarily Known For?",
+            choices: ["Comedic Television Roles", "Sci-Fi Televison Roles", "Tough Guy Roles", "Chrildren's Television"],
+            choicesAnswer: 0
         },
-            function () {
-                $(this).css("color", "black");
-            });
-        $("#choice-holder-3").hover(function () {
-            $(this).css("color", "grey");
+        {
+            question: "What Are The Three Primary Directives Of Robocop?",
+            choices: ["Serve the public trust, Protect the innocent, and Uphold the law", "Never Kill A Human, Always Protect Humans, And Sacrifice Yourself For Humans", "Always Arrest, Never Harm, And Report To Superiors", "Trust, Love, and Discipline"],
+            choicesAnswer: 0
         },
-            function () {
-                $(this).css("color", "black");
-            });
-        $("#choice-holder-4").hover(function () {
-            $(this).css("color", "grey");
-        },
-            function () {
-                $(this).css("color", "black");
-            });
-    }
+        {
+            question: "In The Breakfast Club, why is Brian (Anthony Michael Hall) in detention?",
+            choices: ["He brought a flare-gun to school", "He flooded the boys' toilets", "He cheated on his SATs", "He got into a fight with John Bender"],
+            choicesAnswer: 0
+        }];
 
-    $("#choice-holder-1").on("click", checkAnswer)
-    $("#choice-holder-2").on("click", checkAnswer)
-    $("#choice-holder-3").on("click", checkAnswer)
-    $("#choice-holder-4").on("click", checkAnswer)
+    //Function to submit answers
+    function submitAns() {
+        $("#submit").on("click", function (e) {
+            e.preventDefault();
+            userAns.length = 0;
 
-    // check answer function
-    function checkAnswer() {
-        hideHolders();
+            //Record user answer to question
+            var userSelection = $("#responses input:radio[name=optionsRadios]:checked").val();
+            userAns.push(userSelection);
+            console.log(userAns);
+            nextQ();
+        });
+    };
 
-        if ($(this).text() === answer[count]) {
-            stopTime();//does not link stopTime
-            isSelected = true;
-            $("#answer-holder").show();
-            $("#answer-holder").html("Cool!! You know your 80's!!!" + answer[count]);
-            displayImage();
-            correct++;
-            count++;
-        }
+    //Creating question timer variables & functions
+    var timeLeft = 15;
+    var increment;
 
-        checkGameEnd();
-    }
+    function runTimer() {
+        increment = setInterval(decrement, 1000);
+    };
 
-    // check end game function
-    function checkGameEnd() {
-        if (count === question.length) {
-            $("#time-holder").hide();
-            showResults();
-            count = 0;
-            $(".start").show();
-            $(".start").on("click", function () {
-                resetResults();
-                startGame();
-            });
-        }
-    }
+    function decrement() {
+        timeLeft--;
+        $("#time-left").html("Time remaining: " + timeLeft + " seconds");
+        if (timeLeft === 0) {
+            stopTimer();
+            userAns.length = 0;
+            //Record user answer to question
+            var userSelection = $("#responses input:radio[name=optionsRadios]:checked").val();
+            userAns.push(userSelection);
+            console.log(userAns);
+            nextQ();
+        };
+    };
 
-    function resetTime() {
-        time = 31;
-    }
+    function resetTimer() {
+        timeLeft = 15;
+        $("#time-left").html("Time remaining: " + timeLeft + " seconds");
+    };
 
-    function displayTime() {
-        time--;
-        $("#time-holder").html("Time remaining: " + time);
+    function displayTimer() {
+        $("#time-left").html("Answer Review");
+    };
 
-        if (time <= 0) {
-            hideHolders();
-            stopTime();
-            $("#answer-holder").show();
-            $("#answer-holder").html("Your out of time!! The answer your looking for is: " + answer[count]);
-            displayImage();
-            unanswered++;
-            count++;
-            checkGameEnd();
-        }
-    }
+    function stopTimer() {
+        clearInterval(increment);
+    };
 
-    function startTime() {
-        clearInterval(ticker);
-        ticker = setInterval(displayTime, 1000);
-    }
-    function stopTime() {
-        clearInterval(ticker);
-        resetTime();
+    //Function to display the given response options
+    function createRadios() {
+        var responseOptions = $("#responses");
+        //Empty array for user answer
+        responseOptions.empty();
 
-        if (count < question.length - 1) {
-            setTimeout(startTime, 2000);
-            setTimeout(displayQuestion, 3000);
-        }
-    }
+        for (var i = 0; i < questions[questionCounter].choices.length; i++) {
+            responseOptions.append('<label><input type="radio" name="optionsRadios" id="optionsRadios2" value="' + [i] + '"><div class="twd-opt">' + questions[questionCounter].choices[i] + '</div></input><br></label>');
+        };
+    };
 
-    resetTime();
+    //Function to display the given question
+    function displayQ() {
+        clearQ();
+        resetTimer();
+        $(".questionX").html(questions[questionCounter].question);
+        //Calling the function to display the response options
+        createRadios();
+        //Creating submit button
+        $("#submit-div").append('<button type="submit" class="btn btn-default" id="submit">' + "Submit" + '</button>');
+        runTimer()
+        submitAns();
+    };
 
-    function displayImage() {
-        if (count === 0) {
-            $("#image-holder").show();
-            $("#image-holder").html('<img src="">');
-        }
-        else if (count === 1) {
-            $("#image-holder").show();
-            $("#image-holser").html('<img src="">');
-        }
-        else if (count === 2) {
-            $("#image-holder").show();
-            $("#image-holser").html('<img src="">');
-        }
-        else if (count === 3) {
-            $("#image-holder").show();
-            $("#image-holser").html('<img src="">');
-        }
-        else if (count === 4) {
-            $("#image-holder").show();
-            $("#image-holser").html('<img src="">');
-        }
-        else if (count === 5) {
-            $("#image-holder").show();
-            $("#image-holser").html('<img src="">');
-        }
-        else if (count === 6) {
-            $("#image-holder").show();
-            $("#image-holser").html('<img src="">');
-        }
-        else if (count === 7) {
-            $("#image-holder").show();
-            $("#image-holser").html('<img src="">');
-        }
-    }
+    //Display start page
+    function displayStart() {
+        $("#content").append('<a href="#" class="btn btn-primary btn-lg" id="start-button">' + "Start" + '</a>');
+        //Start game
+        $("#start-button").on("click", function (event) {
+            event.preventDefault();
+            //Displays the first question
+            firstQ();
+            resetTimer();
+        });
+    };
 
-    // show results function
-    function showResults() {
-        $("#correct-holder").show();
-        $("#correct-holder").html("Correct: " + correct);
-        $("#incorrect-holder").show();
-        $("#incorrect-holder").html("Incorrect " + incorrect);
-        $("#unanswered-holder").show();
-        $("#unanswered-holder").html("Unanswered: " + unanswered);
-        $("#restart-holder").show();
-        $("#restart-holder").html("Care to try again? Click Start!!");
-
-    }
-
-    // reset results function
-    function resetResults() {
+    //Reset for end of game
+    function reset() {
+        questionCounter = 0;
         correct = 0;
         incorrect = 0;
-        unanswered = 0;
-    }
+        missed = 0;
+        userAns = [];
+        resetTimer();
+    };
 
-    // start game function
-    function startGame() {
-        $(".start").hide();
-        startTime();
-        displayQuestion();
-    }
+    //Display end page
+    function displayEnd() {
+        clearQ();
+        $("#content").append('<h3>' + "Correct answers: " + correct + '</h3><br><h3>' + "Incorrect answers: " + incorrect + '</h3><br><h3>' + "Skipped questions: " + missed + '</h3><br><br><a href="#" class="btn btn-primary btn-lg" id="restart-button">' + "Restart Game" + '</a>');
+        //Restart game
+        $("#restart-button").on("click", function (event) {
+            event.preventDefault();
+            //Displays the first question
+            reset();
+            clearQ();
+            displayStart();
+        });
+    };
 
-    // start game on click
-    $(".start").on("click", function () {
-        startGame();
-    });
+    //Function to clear the question
+    function clearQ() {
+        var questionDiv = $(".questionX");
+        questionDiv.empty();
 
+        var responsesDiv = $("#responses");
+        responsesDiv.empty();
+
+        var submitDiv = $("#submit-div");
+        submitDiv.empty();
+
+        var contentDiv = $("#content");
+        contentDiv.empty();
+
+        stopTimer();
+    };
+
+    //Showing whether answer was right/wrong
+    function checkQ() {
+        clearQ();
+        var correctAnswer = questions[questionCounter].choicesAnswer;
+        if (userAns[0] == questions[questionCounter].choicesAnswer) {
+            $("#content").append('<h3>' + "Congratulations! You chose the right answer!" + '</h3>');
+            correct++;
+            displayTimer();
+        }
+        else if (userAns[0] === undefined) {
+            $("#content").append('<h3>' + "Time's up!" + '</h3><br><br><h3>' + "The correct answer was: " + questions[questionCounter].choices[correctAnswer] + '</h3>');
+            missed++;
+            displayTimer();
+        }
+        else {
+            $("#content").append('<h3>' + "You chose the wrong answer." + '</h3><br><br><h3>' + "The correct answer was: " + questions[questionCounter].choices[correctAnswer] + '</h3>');
+            incorrect++;
+            displayTimer();
+        };
+    };
+
+    //Function to change the question 
+    function nextQ() {
+        checkQ();
+        //Incrementing the count by 1
+        questionCounter++;
+        //If the count is the same as the length of the question array, the counts reset to 0
+        if (questionCounter === questions.length) {
+            setTimeout(displayEnd, ansTimeout);
+        }
+        else {
+            setTimeout(displayQ, ansTimeout);
+        };
+    };
+
+    //Function to call the first question
+    function firstQ() {
+        var startContent = $("#content");
+        startContent.empty();
+        displayQ();
+    };
+
+    //Displays the start page
+    displayStart();
 
 });
