@@ -3,26 +3,8 @@ body {
   color: white
 }
 
-h1 {
+.jumbotron {
   text-align: center;
-  font-size: 550%;
-}
-
-#quiz {
-  text-align: center;
-}
-
-#responses {
-  font-size: 120%;
+  background: url(./../images/Cinema-Seats-1920x1080_ix3dp.jpg);
   
-}
-
-#submit {
-  font-size: 150%;
-  color: white;
-  background-color: blue;
-}
-
-#heading {
-  font-weight: bold;
 }

@@ -1,210 +1,154 @@
-$(document).ready(function () {
-    //Creating variable to track the question & "slide" numbers
-    var questionCounter = 0;
+// Initial values
+let counter = 30;
+let currentQuestion = 0;
+let score = 0;
+let lost = 0;
+let timer;
 
-    // timeout 
-    var ansTimeout = 5000;
+// if the timer is over then go to the next question
+function nextQuestion() {
+    const isQuestionOver = (quizQuestions.length - 1) === currentQuestion;
+    if (isQuestionOver) {
 
-    //Creating score variables
-    var correct = 0;
-    var incorrect = 0;
-    var missed = 0;
+        console.log('Game is over!!!')
+        displayResult();
+    } else {
+        currentQuestion++;
+        loadQuestion();
+    }
+}
 
-    //Creating array of user's answers
-    var userAns = [];
+// Start a 30 second timer
 
-    //Creating an array of objects with the questions, answer options, and correct answer
-    var questions = [
-        {
-            question: "What Happens If The Ghostbusters Cross Their Streams?",
-            choices: ["It Reverses The Particle Flow", "They Turn Into Ghosts", "They Blow Up", "The Ghost Are Tripled In Number"],
-            choicesAnswer: 0
-        },
-        {
-            question: "Before Die Hard, What Was Actor Bruce Willis Primarily Known For?",
-            choices: ["Comedic Television Roles", "Sci-Fi Televison Roles", "Tough Guy Roles", "Chrildren's Television"],
-            choicesAnswer: 0
-        },
-        {
-            question: "What Are The Three Primary Directives Of Robocop?",
-            choices: ["Serve the public trust, Protect the innocent, and Uphold the law", "Never Kill A Human, Always Protect Humans, And Sacrifice Yourself For Humans", "Always Arrest, Never Harm, And Report To Superiors", "Trust, Love, and Discipline"],
-            choicesAnswer: 0
-        },
-        {
-            question: "In The Breakfast Club, why is Brian (Anthony Michael Hall) in detention?",
-            choices: ["He brought a flare-gun to school", "He flooded the boys' toilets", "He cheated on his SATs", "He got into a fight with John Bender"],
-            choicesAnswer: 0
-        }];
+function timeUp() {
+    clearInterval(timer);
 
-    //Function to submit answers
-    function submitAns() {
-        $("#submit").on("click", function (e) {
-            e.preventDefault();
-            userAns.length = 0;
+    lost++;
 
-            //Record user answer to question
-            var userSelection = $("#responses input:radio[name=optionsRadios]:checked").val();
-            userAns.push(userSelection);
-            console.log(userAns);
-            nextQ();
-        });
-    };
+    preloadImage('lost');
+    setTimeout(nextQuestion, 3 * 1000);
+}
 
-    //Creating question timer variables & functions
-    var timeLeft = 15;
-    var increment;
+function countDown() {
+    counter--;
 
-    function runTimer() {
-        increment = setInterval(decrement, 1000);
-    };
+    $("#time").html('Timer: ' + counter);
+    if (counter === 0) {
+        timeUp();
+    }
+}
 
-    function decrement() {
-        timeLeft--;
-        $("#time-left").html("Time remaining: " + timeLeft + " seconds");
-        if (timeLeft === 0) {
-            stopTimer();
-            userAns.length = 0;
-            //Record user answer to question
-            var userSelection = $("#responses input:radio[name=optionsRadios]:checked").val();
-            userAns.push(userSelection);
-            console.log(userAns);
-            nextQ();
-        };
-    };
+// Display the question and the choices to the browser
 
-    function resetTimer() {
-        timeLeft = 15;
-        $("#time-left").html("Time remaining: " + timeLeft + " seconds");
-    };
+function loadQuestion() {
+    counter = 30;
+    timer = setInterval(countDown, 1000);
 
-    function displayTimer() {
-        $("#time-left").html("Answer Review");
-    };
+    const question = quizQuestions[currentQuestion].question;
+    const choices = quizQuestions[currentQuestion].choices;
 
-    function stopTimer() {
-        clearInterval(increment);
-    };
+    $('#timer').html('Time:' + counter);
+    $('#game').html(`
+        <h4>${question}</h4>
+        ${loadChoices(choices)}
+        ${loadRemainingQuestion()}
+    `);
+}
 
-    //Function to display the given response options
-    function createRadios() {
-        var responseOptions = $("#responses");
-        //Empty array for user answer
-        responseOptions.empty();
+function loadChoices(choices) {
+    let result = '';
 
-        for (var i = 0; i < questions[questionCounter].choices.length; i++) {
-            responseOptions.append('<label><input type="radio" name="optionsRadios" id="optionsRadios2" value="' + [i] + '"><div class="twd-opt">' + questions[questionCounter].choices[i] + '</div></input><br></label>');
-        };
-    };
+    for (let i = 0; i < choices.length; i++) {
+        result += `<p class="choice" data-answer="${choices[i]}">${choices[i]}</p>`;
+    }
 
-    //Function to display the given question
-    function displayQ() {
-        clearQ();
-        resetTimer();
-        $(".questionX").html(questions[questionCounter].question);
-        //Calling the function to display the response options
-        createRadios();
-        //Creating submit button
-        $("#submit-div").append('<button type="submit" class="btn btn-default" id="submit">' + "Submit" + '</button>');
-        runTimer()
-        submitAns();
-    };
+    return result;
+}
 
-    //Display start page
-    function displayStart() {
-        $("#content").append('<a href="#" class="btn btn-primary btn-lg" id="start-button">' + "Start" + '</a>');
-        //Start game
-        $("#start-button").on("click", function (event) {
-            event.preventDefault();
-            //Displays the first question
-            firstQ();
-            resetTimer();
-        });
-    };
+// Either correct/wrong choice selected, go to the next question
 
-    //Reset for end of game
-    function reset() {
-        questionCounter = 0;
-        correct = 0;
-        incorrect = 0;
-        missed = 0;
-        userAns = [];
-        resetTimer();
-    };
+$(document).on('click', '.choice', function () {
+    clearInterval(timer);
+    const selectedAnswer = $(this).attr('data-answer');
+    const correctAnswer = quizQuestions[currentQuestion].correctAnswer;
 
-    //Display end page
-    function displayEnd() {
-        clearQ();
-        $("#content").append('<h3>' + "Correct answers: " + correct + '</h3><br><h3>' + "Incorrect answers: " + incorrect + '</h3><br><h3>' + "Skipped questions: " + missed + '</h3><br><br><a href="#" class="btn btn-primary btn-lg" id="restart-button">' + "Restart Game" + '</a>');
-        //Restart game
-        $("#restart-button").on("click", function (event) {
-            event.preventDefault();
-            //Displays the first question
-            reset();
-            clearQ();
-            displayStart();
-        });
-    };
+    if (correctAnswer === selectedAnswer) {
+        score++;
+        console.log('wins!!!!!!!!!');
+        preloadImage('win');
+        setTimeout(nextQuestion, 3 * 1000);
+    } else {
+        lost++;
+        console.log('lost!!!!!!!!');
+        preloadImage('lost');
+        setTimeout(nextQuestion, 3 * 1000);
+    }
 
-    //Function to clear the question
-    function clearQ() {
-        var questionDiv = $(".questionX");
-        questionDiv.empty();
-
-        var responsesDiv = $("#responses");
-        responsesDiv.empty();
-
-        var submitDiv = $("#submit-div");
-        submitDiv.empty();
-
-        var contentDiv = $("#content");
-        contentDiv.empty();
-
-        stopTimer();
-    };
-
-    //Showing whether answer was right/wrong
-    function checkQ() {
-        clearQ();
-        var correctAnswer = questions[questionCounter].choicesAnswer;
-        if (userAns[0] == questions[questionCounter].choicesAnswer) {
-            $("#content").append('<h3>' + "Congratulations! You chose the right answer!" + '</h3>');
-            correct++;
-            displayTimer();
-        }
-        else if (userAns[0] === undefined) {
-            $("#content").append('<h3>' + "Time's up!" + '</h3><br><br><h3>' + "The correct answer was: " + questions[questionCounter].choices[correctAnswer] + '</h3>');
-            missed++;
-            displayTimer();
-        }
-        else {
-            $("#content").append('<h3>' + "You chose the wrong answer." + '</h3><br><br><h3>' + "The correct answer was: " + questions[questionCounter].choices[correctAnswer] + '</h3>');
-            incorrect++;
-            displayTimer();
-        };
-    };
-
-    //Function to change the question 
-    function nextQ() {
-        checkQ();
-        //Incrementing the count by 1
-        questionCounter++;
-        //If the count is the same as the length of the question array, the counts reset to 0
-        if (questionCounter === questions.length) {
-            setTimeout(displayEnd, ansTimeout);
-        }
-        else {
-            setTimeout(displayQ, ansTimeout);
-        };
-    };
-
-    //Function to call the first question
-    function firstQ() {
-        var startContent = $("#content");
-        startContent.empty();
-        displayQ();
-    };
-
-    //Displays the start page
-    displayStart();
+    console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!', selectedAnswer);
 
 });
+
+function displayResult() {
+    const result = `
+        <p>You got ${score} questions(s) right</p>
+        <p>You missed ${lost} questions(s)</p>
+        <p>Total questions ${quizQuestions.length}</p>
+        <button class="btn btn-primary" id="reset">Reset Game</button>
+    `;
+
+    $('#game').html(result);
+}
+
+
+$(document).on('click', '#reset', function() {
+    counter = 30;
+    currentQuestion = 0;
+    score = 0;
+    lost = 0;
+    timer = null;
+
+    loadQuestion();
+});
+
+function loadRemainingQuestion() {
+    const remainingQuestion = quizQuestions.length - (currentQuestion + 1);
+    const totalQuestion = quizQuestions.length;
+
+    return `Remaining Question: ${remainingQuestion}/${totalQuestion}`;
+
+}
+
+function randomImage(images) {
+    const random = Math.floor(Math.random() * images.length);
+    const randomImage = images[random];
+    return randomImage;
+
+
+}
+
+
+// display a giphy for correct and wrong answers
+function preloadImage(status) {
+    const correctAnswer = quizQuestions[currentQuestion].correctAnswer;
+
+    if (status === 'win') {
+        $('#game').html(`
+            <p class="preload-image">Congratulations, you picked the right answer</p>
+            <p class="preload-image">The right answer is <b>${correctAnswer}</b></p>
+            <img src="${randomImage(funImages)}"/>
+        `);
+    } else {
+        $('#game').html(`
+            <p class="preload-image">The correct answer was <b>${correctAnswer}</b></p>
+            <p class="preload-image">You lost</p>
+            <img src="${randomImage(sadImages)}"/>
+        `);
+    }
+}
+
+$('#start').click(function () {
+    $('#start').remove();
+    $('#time').html(counter);
+    loadQuestion();
+});
+
